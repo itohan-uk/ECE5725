@@ -3,8 +3,14 @@ from picamera import PiCamera
 import time
 import cv2
 import numpy as np
+import RPi.GPIO as GPIO
 
 
+
+def robotMover(x,y):
+
+
+	pass
 
 
 
@@ -34,17 +40,19 @@ def tracker():
 	hsv_roi = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
 	#Define color boundaries
-	#lowerColor = np.array((0.,60.,32.))
-	#upperColor = np.array((180.,255.,255.))
-
 	#Test on tracking red objects
-	lowerColor = np.array((17,15,100))
-	upperColor = np.array((50,56,200))
-
+	lowerColor = np.array((0,55,100))
+	upperColor = np.array((8,69,100))
 
 
 	#Performs Actual Color Detection using the specified ranges
 	mask = cv2.inRange(hsv_roi, lowerColor, upperColor)
+	
+	#Remove Inaccuracies from the mask
+	#mask = cv2.erode(mask, None, iterations=2)	
+	#mask = cv2.dilate(mask, None, iterations=2)	
+
+
 
 	#format: cv2.calcHist(images,channels,mask,histSize, ranges)
 	roi_hist = cv2.calcHist([hsv_roi],[0],mask,[180],[0,180])
@@ -63,10 +71,11 @@ def tracker():
 		hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 	
 		dst = cv2.calcBackProject([hsv], [0],roi_hist,[0,180], 1)
-	
+		
 		#apply meanshift to get the new location
 		ret, track_window = cv2.meanShift(dst, track_window, term_crit)
 
+		#print ret
 		x,y,w,h = track_window
 	
 		#Draw a rectangle on the image
@@ -75,21 +84,27 @@ def tracker():
 		#Write 'Tracked' over the rectangle
 		cv2.putText(frame, 'Tracked', (x + 5, y-12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
 		(255,255,255), 2, cv2.CV_AA)
+		
+		#Show image
 		cv2.imshow("Tracking", frame)
 	
 		key = cv2.waitKey(60) & 0xFF
 
 		rawCapture.truncate(0)
 	
-		if key == ord("q"):
-			break	
-		else:
-			cv2.imwrite(chr(key) + ".jpg", frame)
+		#if key == ord("q"):
+		#	break	
+		#else:
+		#	cv2.imwrite(chr(key) + ".jpg", frame)
 
-
+	#camera.release()
 	cv2.destroyAllWindows()
+	#return [x, y]
+
 
 
 tracker()
+
+
 
 
