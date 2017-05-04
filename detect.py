@@ -6,13 +6,6 @@ import numpy as np
 import imutils
 from scipy.linalg import norm
 			
-		
-def normalize(arr):
-	rng = arr.max() - arr.min()
-	amin = arr.min()
-	return (arr-amin)*255/rng	
-
-
 
 
 def tracker():
@@ -35,7 +28,7 @@ def tracker():
 	grayNew = grayOld
 	frameDiff = cv2.absdiff(grayNew, grayOld)
 	threshOld = cv2.threshold(frameDiff, 25, 255, cv2.THRESH_BINARY)[1]
-	#print threshOld 
+	
 	foundObject = 0
 	#cannyV = 0
 	for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -45,16 +38,11 @@ def tracker():
 	
 		grayNew = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		grayNew = cv2.GaussianBlur(grayNew, (21, 21), 0)
-		#grayNew = cv2.Canny(frame, 75, 200)
 		frameDiff = cv2.absdiff(grayNew, grayOld)
-		#thresh = cv2.threshold(frameDiff, 25, 255, cv2.THRESH_BINARY)[1]
-		#diff = (normalize(thresh)) - (normalize(threshOld))
-		
-		#zeroNorm = norm(diff.ravel(), 0)
 	
 		if not foundObject:
-			#print 'here'
-			thresh = cv2.threshold(frameDiff, 135, 255, cv2.THRESH_BINARY)[1]
+		
+			thresh = cv2.threshold(frameDiff, 100, 255, cv2.THRESH_BINARY)[1]
 			zeroNorm = abs(norm(thresh) - norm(threshOld))
 			#dilateThresh = cv2.dilate(thresh, None, iterations=2)
 			
@@ -64,20 +52,27 @@ def tracker():
 		
 		if zeroNorm:
 			foundObject = 1
+			
 			canny =cv2.Canny(thresh, 50, 100)
 			#cannyV = 1
 			contours, _ = cv2.findContours(canny, cv2.RETR_TREE, 
 			cv2.CHAIN_APPROX_SIMPLE)
+			maxC = max(contours, key=cv2.contourArea)
+			#print maxC
+			#if cv2.contourArea(maxContour > 20):
+		
 			
-			#contours = np.abs(contours)
-			#print contours
-			#if len(contours) > 0:
-				#print 'yup'
-				#for c in contours:
-				#	(x,y,w,h) = cv2.boundingRect(c)
-				#	cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 0,255), 2)
 			cv2.drawContours(frame, contours, -1, (0,0,255), 2)
-				#maxC = max(contours, key=cv2.contourArea)
+			
+			M = cv2.moments(maxC)
+			cX, cY =(int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))	
+			
+				
+			#TO DO: write a function that moves the robot around until its
+			#center is close to CX, CY, then it should start working,
+			#reset zeroNorm and found object when it picks the object and 
+			#puts it in its location
+				
 				#(x,y,w,h) = cv2.boundingRect(maxC)
 				#cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 0,255), 2)
 				
@@ -96,93 +91,7 @@ def tracker():
 		
 		
 		
-			
-		#print grayOld
-		#print 'here'
-		#print grayNew
-		#break
-		#frame = cv2.GaussianBlur(frame, (7, 7), 0)
-		#frame = cv2.Canny(filtered, 75, 200)
 		
-		
-		
-		
-		
-		#Construct a mask for red and perform a series of iterations
-		#and dilations
-		#mask = cv2.inRange(hsv, lowerColor, upperColor)
-		#mask = cv2.erode(mask, None, iterations=2)	
-		#mask = cv2.dilate(mask, None, iterations=2)	
-		
-		
-		
-		#find contours in the mask
-		#(contours, _)= cv2.findContours(frame.copy(), cv2.RETR_EXTERNAL, 
-		#cv2.CHAIN_APPROX_SIMPLE)
-		#contourList = []
-		#for c in contours:
-		#	approx = cv2.approxPolyDP(c, 0.01*cv2.arcLength(c, True), True)
-		#	area = cv2.contourArea(c)
-		#	if ((len(approx) >= 8) & (area > 30)):
-				#contourList.append(c)
-				
-		#cv2.drawContours(filtered, contourList, -1, (0,0,255), 2)
-				
-		
-		
-		
-		
-		#if len(contours) > 0 and not foundObject:
-			
-		
-			#print contours
-		
-			#find the largest contour and use it to draw bounding rect
-			#maxContour = max(contours, key=cv2.contourArea)
-			#print maxContour
-			
-			#compute the bounding box for the contour
-			#(x, y, w, h) = cv2.boundingRect(maxContour)
-			#M = cv2.moments(maxContour)
-			
-			#try:
-			#	center = (int(M["m10"]/M["m00"]), int(M["m01"]/ M["m00"]))
-			#	print center 
-			#except ZeroDivisionError:
-			#	print 'error'
-				
-			#print [x, y, w,h]
-			#cv2.rectangle(frame, (x, y), (x + w , y + h), 255, 2)
-			#cv2.drawContours(frame, contours, -1, (0,255,0), 2)
-			#if center:
-			#	cv2.rectangle(frame, (center), (center[0] + w , center[1] - 100), 255, 2)
-			#	cv2.putText(frame, 'Tracked', (center[0] + 5, center[1]-12), 
-			#	cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2, cv2.CV_AA)
-			
-			#else:
-			#cv2.rectangle(frame, (x, y), (x + w , y - 100), 255, 2)
-	
-	
-			#Write 'Tracked' over the rectangle
-			#cv2.putText(frame, 'Tracked', (x + 5, y-12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-			#(255,255,255), 2, cv2.CV_AA)
-			#foundObject = 1
-			
-			
-			#print "drawn"
-			
-			
-		#else:
-		#	print 'none'
-			
-			
-		#if foundObject:
-		#	cv2.rectangle(frame, (x, y), (x + w , y - 100), 255, 2)
-	
-	
-			#Write 'Tracked' over the rectangle
-		#	cv2.putText(frame, 'Tracked', (x + 5, y-12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-		#	(255,255,255), 2, cv2.CV_AA)
 				
 			
 				
@@ -214,7 +123,7 @@ def tracker():
 
 	camera.release()
 	cv2.destroyAllWindows()
-	#return [x, y]
+
 
 
 
