@@ -139,16 +139,34 @@ def pivotRight():
 
 
 
+def makeCenter(x):
+	#pass
+	centerX = 320
+	pivotStart = time.clock()
+	
+	
+	#Determine Direction to move
+	if x < centerX:
+		#Move left
+		#pivot for 2 seconds)
+		while (time.clock() - pivotStart) < 2:
+			pivotLeft()
+		
+		
+		
+	elif x > centerX:
+		#Move right
+		#pivot for 2 seconds)
+		while (time.clock() - pivotStart) < 2:
+			pivotRight()	
+
 
 
 ################# END MOTOR STUFF ###################
 
 			
 			
-def makeCenter(x):
-	pass
-	#centerX = 320
-	
+
 	
 	
 	
@@ -258,26 +276,31 @@ def tracker():
 			cv2.CHAIN_APPROX_SIMPLE)
 			
 			
-			#cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
+			cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
 			
 			
 			#Calculate Centroid
-			maxC = max(changeContours, key=cv2.contourArea)
-			M = cv2.moments(maxC)
-			cX, cY =(int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
+			try:
+				maxC = max(changeContours, key=cv2.contourArea)
+				M = cv2.moments(maxC)
+				cX, cY =(int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
 			
-			drawNow = 1	
+				drawNow = 1	
+			except ValueError:
+				continue
 			
 		if drawNow:
 			cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
 			
 			#Move Object to Make cX equal to its Center
+			#if (cX < 300) or (cX > 340):
+			#	makeCenter(cX)
 			
 			
 			
 			
 			
-			#print cX
+			print cX
 			#print cY
 					
 				
@@ -330,7 +353,7 @@ def tracker():
 		
 		#print zeroNorm
 		#print foundObject
-		print 'zeroNorm ' + str(zeroNorm) + '\n'
+		#print 'zeroNorm ' + str(zeroNorm) + '\n'
 		#print 'newNorm ' + str(newNorm) + '\n'
 		
 		
@@ -373,6 +396,8 @@ def tracker():
 
 
 tracker()
+#clockWise_R()
+#counterClockWise_L()
 
 
 
