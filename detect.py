@@ -3,7 +3,6 @@ from picamera import PiCamera
 import time
 import cv2
 import numpy as np
-#import imutils
 from scipy.linalg import norm
 import RPi.GPIO as GPIO
 
@@ -73,24 +72,26 @@ def immediateStop():
 	p2.ChangeDutyCycle(0)
 	p.ChangeDutyCycle(0)
 
+'''
 def resume():
 	global dc
 	global dc2
 
 	p.ChangeDutyCycle(dc)
 	p2.ChangeDutyCycle(dc2)
+'''
 
-
-
-
-def forward():
-	global firstTime
-	firstTime = time.clock()
-	clockWise_R()
-	counterClockWise_L()
 
 
 def backward():
+	#global firstTime
+	#firstTime = time.clock()
+	clockWise_R()
+	counterClockWise_L()
+	
+
+
+def forward():
 	clockWise_L()
 	counterClockWise_R()
 
@@ -112,35 +113,39 @@ def makeCenter(x):
 	
 	#Determine Direction to move
 	if x < centerX:
-		print 'first'
-		#Move left
-		#pivot for 0.1 seconds
-		while (time.clock() - pivotStart) < 0.1:
+		#pivot left for 0.05 seconds
+		while (time.clock() - pivotStart) < 0.05:
 			pivotLeft()
-		immediateStop()	
-		
+	
 		
 		
 	elif x > centerX:
-		print 'second'
-		#Move right
-		#pivot for 0.1 seconds
-		while (time.clock() - pivotStart) < 0.1:
+		#pivot right for 0.05 seconds
+		while (time.clock() - pivotStart) < 0.05:
 			pivotRight()	
+
+
+
+def picker(x ,y, w, h, grayNew, firstGray):
+	#global grayNew
+	#global firstGray
+	forwardStart = time.clock()
+	#while x > 50 and y > 50 and (x + w) < 550 and (y + h) < 420:
+	if 	not (x > 50 and y > 50 and (x + w) < 550 and (y + h) < 420):
+		forward()
+		
+	else:
 		immediateStop()
-
-
-################# END MOTOR STUFF ###################
-
+		
+				
+				
+	
 			
-			
 
+
+################# END MOTOR STUFF ###################	
 	
-	
-	
-	
-	
-	
+############### TRACKER PART BEGINS #################	
 				
 			
 
@@ -168,8 +173,10 @@ def tracker():
 	
 	foundObject = 0
 	newNorm = 1
-	drawNow = 0
+	#drawNow = 0
 	ready = 0
+	forwardStatus = 0
+	startTime = 0
 	
 	try:
 		for frame in camera.capture_continuous(rawCapture, format="bgr", 
@@ -198,7 +205,8 @@ def tracker():
 				newNorm = abs(norm(thresh) - norm(threshOld))
 			
 			#Draw when image stops changing
-			if not newNorm and not drawNow and not ready:
+			#if not newNorm and not drawNow and not ready:
+			if not newNorm and not ready:
 				assert newNorm == 0.0
 				
 				
@@ -231,6 +239,7 @@ def tracker():
 				#Move Object to Make cX equal to its Center
 				if (cX < 290) or (cX > 350): #and not ready:
 					makeCenter(cX)
+					immediateStop()	
 					print 'not ready'
 					
 				else:
@@ -240,13 +249,83 @@ def tracker():
 				
 				
 				
+			if ready:
+				#Draw cross bar using cX and cY
 				
-				print cX
-	
+				(xStart, xEnd) = (int(cX) - 30), (int(cX) + 30)
+				(yStart, yEnd) = (int(cY) - 30), (int(cY) + 30)
+				cv2.line(frame, (xStart, cY), (xEnd, cY), (0, 0, 255), 3)
+				cv2.line(frame, (cX, yStart), (cX, yEnd), (0, 0, 255), 3)
+				(x ,y, w, h) = cv2.boundingRect(maxC)
+				#cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+				
+				
+				time.sleep(0.1)
+				forward()
+				#forward = 1
+			
+			
+			#Move forward for a particular time, stop and recentralize
+			if not forward and ready:
+				startTime = time.clock()
+				forwardStatus  = 1
+				
+			if (time.clock() - startTime) >= 0.3:
+				ready = 0
+				forwardStatus  = 0
+				
 			
 			
 			
-					
+			#Check if  its ready to pick up the object
+			if 	(x <= 50 and y <= 50 and (x + w) >= 600 and (y + h) >= 440):	
+				immediateStop()
+				print 'yay!!! found' 
+				
+				
+				
+				#TO DO
+				#pICK oBJECT
+				
+				#TO DO
+				#Move backward for sometime
+				#Rotate around slowly looking for a particular object
+				#When you find it, move towards it, drop the object
+				
+				#move backward
+				#Reset all the variables and begin again
+				
+				              
+				
+			
+				
+				
+			
+				
+				
+				
+				
+				#picker(x ,y, w, h, grayNew, firstGray)
+				#changeDiff = cv2.absdiff(grayNew, firstGray)
+				#threshChange = cv2.threshold(changeDiff, 50, 255, cv2.THRESH_BINARY)[1]
+				#cannyChange =cv2.Canny(threshChange, 50, 100)
+			
+				#changeContours, _ = cv2.findContours(cannyChange, cv2.RETR_TREE, 
+				#cv2.CHAIN_APPROX_SIMPLE)
+				
+				#try:
+				#	maxC = max(changeContours, key=cv2.contourArea)
+					#M = cv2.moments(maxC)
+					#cX, cY =(int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"]))
+				
+					#drawNow = 1	
+				#except ValueError:
+				#	continue
+				
+				#picker(x ,y, w, h, grayNew, firstGray)
+				#cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)	
+				#print cX
+		
 				
 		
 			cv2.imshow("Tracking", frame)
@@ -268,23 +347,28 @@ def tracker():
 			if key == ord("q"):
 				print 'quitting'
 				break
+	
 			
 	except KeyboardInterrupt:
 		
 		rawCapture.truncate(0)
-		print 'here'
 		GPIO.cleanup()	
-		
 		cv2.destroyAllWindows()
 
 
-	cv2.destroyAllWindows()
-	GPIO.cleanup()
+	
+	finally:
+		rawCapture.truncate(0)
+		cv2.destroyAllWindows()
+		GPIO.cleanup()
 
+##################### TRACKER PART ENDS #######################
+		
 
 
 
 tracker()
+
 
 
 
