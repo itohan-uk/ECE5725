@@ -114,6 +114,7 @@ def forward():
 	clockWise_L()
 	counterClockWise_R()
 	
+	
 
 
 def pivotLeft():
@@ -154,10 +155,10 @@ def reCenter(frame):
 			
 			
 		except ValueError:
-			continue
+			pass
 		
 		except ZeroDivisionError:
-			continue
+			pass
 		
 
 		if area < 18000:
@@ -171,7 +172,7 @@ def reCenter(frame):
 
 
 def makeCenter(x):
-	centerX = 160
+	centerX = 320
 	pivotStart = time.clock()
 	
 	
@@ -332,7 +333,7 @@ def tracker():
 				cv2.CHAIN_APPROX_SIMPLE)
 				
 				
-				cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
+				#cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
 				
 				
 				#Calculate Centroid
@@ -348,9 +349,9 @@ def tracker():
 				
 				except ZeroDivisionError:
 					continue
+				
 			
-			#if drawNow:
-				cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
+				#cv2.drawContours(frame, changeContours, -1, (0,0,255), 2)
 					
 				#Move Object to Make cX equal to its Center
 				if (cX < 290) or (cX > 350): #and not ready:
@@ -358,7 +359,8 @@ def tracker():
 			
 					print cX
 		
-					makeCenter(cX) #Centralize the object
+					#makeCenter(cX) #Centralize the object
+					reCenter(frame)
 					immediateStop()	
 					print 'not ready'
 					
@@ -400,15 +402,16 @@ def tracker():
 				########end added stuff from Anthony#####333
 			
 			#Move forward for a particular time, stop and recentralize
-			#if not forwardStatus and ready:
-			#	startTime = time.clock()
-			#	forwardStatus  = 1
+			if not forwardStatus and ready and stop:
+				startTime = time.clock()
+				forwardStatus  = 1
+				#stop  = 0
+			if (time.clock() - startTime) >= 0.5:
+				ready = 0
+				#reCenter(frame)
+				forwardStatus  = 0
 				
-			#if (time.clock() - startTime) >= 0.1:
-			#	ready = 0
-			#	forwardStatus  = 0
-				
-			
+			print 'stop %d'%stop
 			
 			################## CHECK IF TIME TO PICK #######################
 			#Check if  its ready to pick up the object
@@ -514,7 +517,16 @@ def tracker():
 
 tracker()
 
-
+#while 1:
+	#counterClockWise_L()
+	#counterClockWise_R()
+	#time.sleep(1)
+	#clockWise_L()
+	#clockWise_L()
+#	forward()
+#	print 'here'
+#	pivotLeft()
+	
 
 
 
